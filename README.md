@@ -2,6 +2,8 @@
 
 为 DeepSeek Harness 提供的全局跨会话待办插件：
 
+![待办页签](docs/screenshot.jpg)
+
 - **全局持久**：一份待办存在 `$DSH_HOME/todos.json`，所有会话、所有工作区共用，不随会话销毁。
 - **`my_todo` 工具**：模型在会话中增/删/改/查，支持按 id 或按内容定位；`action: 'open'` 是唯一的"打开待办页签"指令。
 - **`/todo` 命令**：`/todo`、`/todo open` 打开页签；`/todo close` 关闭页签；`add/list/done/rm/clear-done` 只操作数据，不打开页签。
