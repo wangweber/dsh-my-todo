@@ -1,0 +1,6 @@
+# dsh-my-todo bundle patch: one plugin row. The browser half is discovered
+# automatically through the package's dsh.client declaration when this row is
+# enabled in a Web profile.
+- insert:
+    - id: my-todo
+      name: dsh-my-todo
