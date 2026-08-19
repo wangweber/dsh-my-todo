@@ -55,7 +55,7 @@ export function apply(ctx: Context): void {
   bindClientContext(ctx)
   setTodoViewComponent(TodoView)
 
-  ctx.locale.register('my-todo', { zh, en })
+  ctx.effect(() => ctx.locale.register('my-todo', { zh, en }), 'my-todo: dictionaries')
 
   // The todo view entry is registered lazily by openTodoView; this effect
   // only owns the event observer and its teardown.
