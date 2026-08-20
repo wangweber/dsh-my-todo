@@ -95,10 +95,10 @@ export function apply(ctx: Context): void {
         const event = match.event
         if (event.type === 'command/run') {
           const args = (event.data.args ?? '').trim()
-          if (args === '' || args === 'open') openTodoView()
+          if (args === '' || args === 'open') openTodoView(event.time)
           else if (args === 'close') closeTodoView()
         } else if (event.type === 'tool/call') {
-          if (toolAction(event.data.arguments) === 'open') openTodoView()
+          if (toolAction(event.data.arguments) === 'open') openTodoView(event.time)
         } else if (event.type === 'command/done' || event.type === 'tool/result') {
           // A todo mutation settled in this session: refresh the open view.
           requestRefresh()

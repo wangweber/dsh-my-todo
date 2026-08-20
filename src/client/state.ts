@@ -52,6 +52,47 @@ let state: ViewState = { open: false, refresh: 0 }
 let closeTab: (() => void) | undefined
 let clientCtx: Context | undefined
 
+/**
+ * Global durable dismissal marker. The todo tab is global (one entry in every
+ * session's view ring), so its open/close state cannot live in a single
+ * session's log: a `open` in session A and a `close` in session B are separate
+ * facts, and replaying either session would resurrect or drop the tab.
+ *
+ * We record the last dismissal time in localStorage (same-origin, survives
+ * reloads). Replayed historical open instructions older than the marker are
+ * suppressed; a live open instruction newer than the marker clears it and
+ * opens the tab normally. `/todo close` and the close button both set it, so
+ * the two stay consistent across reloads and across every session.
+ */
+const CLOSED_KEY = 'dsh-my-todo:view-closed'
+
+function readClosedAt(): number | undefined {
+  try {
+    const raw = localStorage.getItem(CLOSED_KEY)
+    if (raw === null) return undefined
+    const value = Number(raw)
+    return Number.isFinite(value) && value > 0 ? value : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function markClosed(): void {
+  try {
+    localStorage.setItem(CLOSED_KEY, String(Date.now()))
+  } catch {
+    // Storage unavailable: fall back to a transient close for this page.
+  }
+}
+
+function clearClosed(): void {
+  try {
+    localStorage.removeItem(CLOSED_KEY)
+  } catch {
+    // Ignore storage failures; a stale marker merely keeps the tab closed.
+  }
+}
+
 function setState(patch: Partial<ViewState>): void {
   state = { ...state, ...patch }
   for (const fn of listeners) fn()
@@ -72,8 +113,18 @@ export function getViewState(): ViewState {
   return state
 }
 
-/** Open the todo view tab (idempotent): registers the `conversation.view` entry. */
-export function openTodoView(): void {
+/**
+ * Open the todo view tab (idempotent): registers the `conversation.view`
+ * entry. `eventTime` is the opening instruction's session event time — used to
+ * tell a replayed historical open (predates the global close marker) from a
+ * live one (newer, clears the marker).
+ */
+export function openTodoView(eventTime: number): void {
+  const closedAt = readClosedAt()
+  if (closedAt !== undefined) {
+    if (eventTime < closedAt) return
+    clearClosed()
+  }
   const ctx = clientCtx
   if (ctx === undefined || closeTab !== undefined) return
   closeTab = ctx.effect(() => {
@@ -92,12 +143,17 @@ export function openTodoView(): void {
   setState({ open: true })
 }
 
-/** Close the todo view tab: unregisters the entry; the view falls back to chat. */
+/**
+ * Close the todo view tab: unregisters the entry (the view falls back to
+ * chat) and records a global durable dismissal so no session replays the tab
+ * back after a page reload.
+ */
 export function closeTodoView(): void {
   const dispose = closeTab
   closeTab = undefined
   dispose?.()
   setState({ open: false })
+  markClosed()
 }
 
 /** Ask the open view to refetch (driven by observed session events). */

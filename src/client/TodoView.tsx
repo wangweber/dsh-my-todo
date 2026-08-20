@@ -1,8 +1,9 @@
 /**
  * The todo view tab body: a three-column board by status (待启动 / 进行中 /
  * 已完成), a status-cycle control in front of every row (click cycles
- * pending → in_progress → completed), add input, delete per row,
- * clear-completed, and an icon close button right after the page title.
+ * pending → in_progress → completed), add input with a clear-completed
+ * button on the same row, delete per row, and an icon close button right
+ * after the page title.
  * Refetches on mount, on the refresh signal, and after its own mutations.
  * @module dsh-my-todo/client/TodoView
  */
@@ -166,6 +167,13 @@ export function TodoView(): ReactNode {
         style: inputStyle(),
       }),
       createElement('button', { type: 'button', onClick: submit, style: primaryButtonStyle() }, '添加'),
+      list.counts.completed > 0
+        ? createElement('button', {
+          type: 'button',
+          onClick: clearDone,
+          style: { ...ghostButtonStyle(), marginLeft: 'auto' },
+        }, '清除已完成')
+        : null,
     ),
     error === undefined
       ? null
@@ -225,11 +233,6 @@ export function TodoView(): ReactNode {
         ),
       )),
     ),
-    list.counts.completed > 0
-      ? createElement('div', { style: { display: 'flex', justifyContent: 'flex-end' } },
-        createElement('button', { type: 'button', onClick: clearDone, style: ghostButtonStyle() }, '清除已完成'),
-      )
-      : null,
   )
 }
 
